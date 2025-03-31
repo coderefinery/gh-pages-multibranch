@@ -46,14 +46,14 @@ runs:
         git rev-parse --verify remotes/origin/br1 || true
     - name: Make temporary directory
       id: mktmpdir
-      if: ${{ github.event_name == 'push' }}
+      if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
       shell: bash
       run: |
         #echo "::set-output name=tmpdir::$(mktemp -d)"
         echo "tmpdir=$(mktemp -d)" >> $GITHUB_OUTPUT
     - name: Assemble variables
       id: variables
-      if: ${{ github.event_name == 'push' }}
+      if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
       shell: bash
       env:
         default_branch: ${{inputs.default_branch}}
@@ -62,7 +62,7 @@ runs:
         echo "refheads_default_branch=refs/heads/${default_branch}" >> $GITHUB_OUTPUT
     - name: Find CNAME
       id: cname
-      if: ${{ github.event_name == 'push' }}
+      if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
       shell: bash
       env:
         inputs_cname: ${{inputs.cname}}
@@ -90,7 +90,7 @@ runs:
     # Clone the old gh-pages branch and copy that to tmpdir, this is
     # the base deployment (we keep all old pages)
     - name: Clone old gh-pages
-      if: ${{ github.event_name == 'push' }}
+      if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
       shell: bash
       env:
         publish_branch: ${{inputs.publish_branch}}
@@ -112,7 +112,7 @@ runs:
     # deployment.
     - name: Copy new build (default branch)
       id: copy_build_default_branch
-      if: ${{ github.event_name == 'push' && github.ref == steps.variables.outputs.refheads_default_branch }}
+      if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == steps.variables.outputs.refheads_default_branch }}
       shell: bash
       env:
         directory: ${{inputs.directory}}
@@ -140,7 +140,7 @@ runs:
     # _gh-pages/branch/$brname (transforming '/' into '--')
     - name: Copy new build (non-default branch)
       id: copy_build_nondefault_branch
-      if: ${{ github.event_name == 'push' }}
+      if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
       shell: bash
       env:
         ref: ${{github.ref}}
@@ -166,7 +166,7 @@ runs:
     # Go through each branch in _gh-pages/branch/, if it's not a
     # ref, then delete it.
     - name: Delete old feature branches
-      if: ${{ github.event_name == 'push' }}
+      if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
       shell: bash
       env:
         tmpdir: ${{ steps.mktmpdir.outputs.tmpdir }}
@@ -188,7 +188,7 @@ runs:
     # Rsync the whole multiplexed path back to the original input
     # directory
     - name: Copy multipages directory back
-      if: ${{ github.event_name == 'push' }}
+      if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
       shell: bash
       env:
         directory: ${{inputs.directory}}
